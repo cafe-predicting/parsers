@@ -5,12 +5,16 @@ import java.time.LocalDateTime;
 import cafe.data.parser.wrapper.Age;
 import cafe.data.parser.wrapper.Gender;
 
+/**
+ * Object representing raw entries in point of sale data file.
+ * @author Ryan Zembrodt
+ */
 public class PointOfSaleData {
 	private Age age;
 	private Gender gender;
 	private double dwellTime;
 	private double attentionTime;
-	private double temperature; // fahrenheit
+	private double temperature; // Fahrenheit
 	private double humidity; // percentage
 	private String percipitation;
 	private int saleItemId;

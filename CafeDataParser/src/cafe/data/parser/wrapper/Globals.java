@@ -1,5 +1,11 @@
 package cafe.data.parser.wrapper;
 
+/**
+ * Object holding static constants to represent various String and integer values needed by the parser.
+ * Constants include the various file names, column number matching data in the csv files, and date format matching the specific files.
+ * If inputting a new csv file, be sure to validate that the columns match the values here and to edit the row or column counts.
+ * @author Ryan Zembrodt
+ */
 public class Globals {
 	// Data filenames
 	public static final String GATES_FILE   = "gatesData.csv";

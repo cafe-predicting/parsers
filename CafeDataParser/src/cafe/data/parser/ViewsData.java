@@ -1,13 +1,14 @@
 package cafe.data.parser;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 
 import cafe.data.parser.wrapper.Age;
 import cafe.data.parser.wrapper.Gender;
 
+/**
+ * Object representing entires in the views data file.
+ * @author Ryan Zembrodt
+ */
 public class ViewsData {
 	private int locationId;
 	private Gender gender;
@@ -16,8 +17,17 @@ public class ViewsData {
 	private int dwellTime;
 	private int attentionTime;
 	private int watcherCount;
-	//private int res_1;
-	
+
+	/**
+	 * Builds a ViewsData object from the raw views data values.
+	 * @param locationId
+	 * @param gender integer that is then represented by a {@link Gender} object
+	 * @param age integer that is then represented by a {@link Age} object
+	 * @param datetime
+	 * @param dwellTime
+	 * @param attentionTime
+	 * @param watcherCount
+	 */
 	public ViewsData(int locationId, int gender, int age, LocalDateTime datetime, int dwellTime, int attentionTime, int watcherCount) {
 		this.locationId = locationId;
 		this.gender = new Gender(gender);

@@ -7,6 +7,10 @@ import java.util.List;
 import cafe.data.parser.wrapper.Age;
 import cafe.data.parser.wrapper.Gender;
 
+/**
+ * Object used to represent customers built from the POS Data.
+ * @author Ryan Zembrodt
+ */
 public class Customer {
 	private LocalDateTime datetime;
 	private String dayOfWeek;
@@ -30,10 +34,19 @@ public class Customer {
 		this.precipitation = precipitation;
 	}
 	
+	/**
+	 * Adds an item to the list of items the customer purchased.
+	 * @param item
+	 */
 	public void addItem(Item item) {
 		purchasedItems.add(item);
 	}
 	
+	/**
+	 * Adds an item to the list of items advertised while the customer made their purchase.
+	 * Takes into account multiple items could've have been advertised so only adds in unique Items.
+	 * @param item
+	 */
 	public void addAdvertisedItem(Item item) {
 		boolean containsItem = false;
 		for (Item i : advertisedItems) {

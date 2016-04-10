@@ -1,10 +1,11 @@
 package cafe.data.parser;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 
+/**
+ * Object used to represent entries from the gates data file.
+ * @author Ryan Zembrodt
+ */
 public class GatesData {
 	private int locationId;
 	private int gateId;
@@ -30,11 +31,15 @@ public class GatesData {
 		return gateId;
 	}
 	
+	public int getGateDuration() {
+		return gateDuration;
+	}
+	
 	public int getInCount() {
 		return inCount;
 	}
 	
 	public int getOutCount() {
-		return inCount;
+		return outCount;
 	}
 }

@@ -1,12 +1,11 @@
 package cafe.data.parser;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-
-import cafe.data.parser.wrapper.Age;
-
+/**
+ * Object used to represent all the data about an item a customer purchased or the advertised item from the POS data.
+ * @author Ryan Zembrodt
+ */
 public class Item {
+	// Constants for the different strings possible for the item's values.
 	private static final String HEALTHY = "Healthy";
 	private static final String UNHEALTHY = "Unhealthy";
 	private static final String HOT = "Hot";
@@ -19,6 +18,13 @@ public class Item {
 	private final String temp;
 	private final boolean healthy;
 	
+	/**
+	 * Constructs an Item from the raw data found in the POS data file.
+	 * @param id
+	 * @param type
+	 * @param temp
+	 * @param healthy string representing healthy or unhealthy (see {@link Item#HEALTHY} and {@link Item#UNHEALTHY})
+	 */
 	public Item(int id, String type, String temp, String healthy) {
 		this.id = id;
 		this.type = type;
@@ -58,6 +64,9 @@ public class Item {
 		return result;
 	}
 
+	/**
+	 * Checks if Items are equal based on their attribute values and not their memory address.
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) {
