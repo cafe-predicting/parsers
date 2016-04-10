@@ -1,0 +1,5 @@
+CafeDataParser/.classpath
+CafeDataParser/gatesData.csv
+*.csv
+*.project
+*.class
