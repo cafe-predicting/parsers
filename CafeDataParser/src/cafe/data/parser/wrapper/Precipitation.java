@@ -33,31 +33,36 @@ public class Precipitation {
 	 * @param value
 	 */
 	public Precipitation(String value) {
-		this.value = value;
-		
 		if (value.equals(CLEAR_STR)) {
 			num = CLEAR;
+			this.value = value;
 		}
 		else if (value.equals(CLOUDS_STR)) {
 			num = CLOUDS;
+			this.value = value;
 		}
 		else if (value.equals(DRIZZLE_STR)) {
 			num = DRIZZLE;
+			this.value = value;
 		}
 		else if (value.equals(FOG_STR)) {
 			num = FOG;
+			this.value = value;
 		}
 		else if (value.equals(MIST_STR)) {
 			num = MIST;
+			this.value = value;
 		}
 		else if (value.equals(RAIN_STR)) {
 			num = RAIN;
+			this.value = value;
 		}
 		else if (value.equals(SNOW_STR)) {
 			num = SNOW;
+			this.value = value;
 		} else {
 			num = UNKNOWN;
-			value = UNKNOWN_STR;
+			this.value = UNKNOWN_STR;
 		}
 	}
 	
