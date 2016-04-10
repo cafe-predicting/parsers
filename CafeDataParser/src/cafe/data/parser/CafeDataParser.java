@@ -326,6 +326,7 @@ public class CafeDataParser {
 	
 	/**
 	 * Wrapper for {@link Boolean#parseBoolean} to default the return null instead of throwing an exception or return false if it is an empty string.
+	 * Will return false for all string values not equal (ignoring case) to 'true'.
 	 * @param s the string to be parsed
 	 * @return the boolean value of the string, null if string cannot be parsed, or false if the string is empty.
 	 */
@@ -353,45 +354,12 @@ public class CafeDataParser {
 	}
 	
 	/**
-	 * Calculates the heat index value based on the temperature in Fahrenheit and the humidity percentage.
-	 * @param temperature in Fahrenheit
-	 * @param humidity in percentage
-	 * @return the heat index temperature value
-	 * @throws IllegalArgumentException if temperature is not 70 degrees Fahrenheit or greater.
+	 * Checks if two LocalDateTime objects are equal down to the minute.
+	 * This does not just check the minute value but also year, month, day, and hour values.
+	 * @param datetime1
+	 * @param datetime2
+	 * @return true of the LocalDateTime objects are equal to the minute, false otherwise.
 	 */
-	public static double getHeatIndex(double temperature, double humidity) {
-		if (temperature < 70.0) {
-			throw new IllegalArgumentException("Temperature must be 70 degrees Fahrenheit or greater to calculate the heat index.");
-		}
-		
-		final double C1 = -42.379;
-		final double C2 = 2.04901523;
-		final double C3 = 10.14333127;
-		final double C4 = -0.22475541;
-		final double C5 = -0.00683783;
-		final double C6 = -0.05481717;
-		final double C7 = -0.00122874;
-		final double C8 = 0.00085282;
-		final double C9 = -0.00000199;
-		
-		return C1 + (C2 * temperature) + (C3 * humidity) + (C4 * temperature * humidity)
-				+ (C5 * (temperature * temperature)) + (C6 * (humidity * humidity))
-				+ (C7 * (temperature * temperature) * humidity) + (C8 * temperature * (humidity * humidity))
-				+ (C9 * (temperature * temperature) * (humidity * humidity));
-	}
-
-	/**
-	 * Calculates the wind chill value based on temperature in Fahrenheit and humidity percentage. Uses the Lexington, KY average in winter of 2015 for wind speed.
-	 * @param temperature in Fahrenheit
-	 * @param humidity in percentage
-	 * @return the wind chill temperature value
-	 */
-	public static double getWindChill(double temperature, double humidity) {
-		final double WIND_SPEED = 10.0; // Lexington, KY winter average
-		return 35.74 + (0.6215 * temperature) - (35.75 * Math.pow(WIND_SPEED, 0.16))
-				+ (0.4275 * temperature * Math.pow(WIND_SPEED, 0.16));
-	}
-	
 	public static boolean isMinuteEqual(LocalDateTime datetime1, LocalDateTime datetime2) {
 		return datetime1.getYear() == datetime2.getYear()
 				&& datetime1.getMonthValue() == datetime2.getMonthValue()
@@ -406,20 +374,24 @@ public class CafeDataParser {
 	 * @return a LocalDateTime with its LocalTime value converted to the nearest quarter hour.
 	 */
 	public static LocalDateTime toQuarterHour(LocalDateTime date) {
+		// Normalize seconds to 0-1 range: (seconds - min) / (max - min) where min = 0 and max = 60
+		double secondsNormalized = (double)date.getSecond() / 60.0;
+		// Append the seconds to minutes value as a decimal
+		double minuteMod = (double)date.getMinute() + secondsNormalized;
 		// The remainder of the current minute (0-60) divided by 15.
-		int minuteMod = date.getMinute() % 15;
+		minuteMod %= 15.0;
 		
 		// Create a copy of the passed LocalDateTime object.
 		LocalDateTime retDate = LocalDateTime.of(date.getYear(), date.getMonthValue(), date.getDayOfMonth(),
-				date.getHour(), date.getMinute());
+				date.getHour(), date.getMinute(), 0);
 		
 		// The minute value is closer to the lower bound so should be rounded down.
-		if (minuteMod < 8) {
+		if (minuteMod < 7.5) {
 			// Subtract the remainder from the current minutes (LocalDateTime.minusMinutes will change the hour/day/month/year value if enough is subtracted)
 			retDate = retDate.minusMinutes((long)minuteMod);
 		// The minute value is closer to the upper bound so should be rounded up.
 		} else {
-			retDate = retDate.plusMinutes((long)(15 - minuteMod));
+			retDate = retDate.plusMinutes(15L - (long)minuteMod);
 		}
 		return retDate;
 	}
@@ -430,29 +402,37 @@ public class CafeDataParser {
 	 * @return a LocalDateTime with its LocalTime value converted to the nearest eighth hour.
 	 */
 	public static LocalDateTime toEighthHour(LocalDateTime date) {
+		// Normalize seconds to 0-1 range: (seconds - min) / (max - min) where min = 0 and max = 60
+		double secondsNormalized = (double)date.getSecond() / 60.0;
+		// Append the seconds to minutes value as a decimal
+		double minuteMod = (double)date.getMinute() + secondsNormalized;
 		// The remainder of the current minute (0-60) divided by 7.5
-		double minuteMod = date.getMinute() % 7.5;
+		minuteMod %= 7.5;
 		
 		// Create a copy of the passed LocalDateTime object.
 		LocalDateTime retDate = LocalDateTime.of(date.getYear(), date.getMonthValue(), date.getDayOfMonth(),
 				date.getHour(), date.getMinute());
 		
 		// The minute value is closer to the lower bound so should be rounded down.
-		if (minuteMod <= 3.75) {
-			retDate = retDate.minusMinutes((long)minuteMod + 1);
-			// If minuteMod (the remainder) is not an integer, add 30 seconds to the time as it is a value between the quarter hours.
-			double remainder = minuteMod - (int)minuteMod;
-			if (remainder > 0) {
-				retDate = retDate.withSecond(30);
+		if (minuteMod < 3.75) {
+			retDate = retDate.minusMinutes((long)minuteMod);
+			// If the time was rounded to a boundary on :07:30, :22:30, :37:30, or :52:30 subtract 1 more minute.
+			if (retDate.getMinute() % 15 != 0) {
+				retDate = retDate.minusMinutes(1L);
 			}
-			// The minute value is closer to the upper bound so should be rounded up.
+		// The minute value is closer to the upper bound so should be rounded up.
 		} else {
-			retDate = retDate.plusMinutes((long)(7.5 - minuteMod));
-			double remainder = (7.5 - minuteMod) - (int)(7.5 - minuteMod);
-			if (remainder > 0) {
-				retDate = retDate.withSecond(30);
-			}
+			retDate = retDate.plusMinutes((long)(7.5 - (long)minuteMod));
 		}
+		
+		// If the new rounded minute is not on a quarter hour (:00, :15, :30, or :45) add 30 seconds.
+		// This is for the boundaries :07:30, :22:30, :37:30, and :52:30.
+		if (retDate.getMinute() % 15 != 0) {
+			retDate = retDate.withSecond(30);
+		} else {
+			retDate = retDate.withSecond(0);
+		}
+		
 		return retDate;
 	}
 	
