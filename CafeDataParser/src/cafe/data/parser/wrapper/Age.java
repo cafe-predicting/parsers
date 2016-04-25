@@ -53,6 +53,14 @@ public class Age {
 		return this.value == age;
 	}
 	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + value;
+		return result;
+	}
+
 	/**
 	 * Override of Object's equal method to compare two Age objects' values.
 	 * Does not compare the objects memory addresses.
