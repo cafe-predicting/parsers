@@ -9,6 +9,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import cafe.data.parser.wrapper.Globals;
@@ -176,64 +178,23 @@ public class CafeDataParser {
 				
 				int count = 0;
 				String line = null;
-				// Used to check if this is a new or different customer.
-				LocalDateTime currentDate = null;
 				
 				// Loop through each entry in the point of sale data file.
 				while ((line = br.readLine()) != null) {
 					count++;
 					if (!line.isEmpty()) {
-						
+						// Split the row by commas and check the correct amount of values are in it.
 						String[] dataEntry = line.split(",");
 						if (dataEntry.length != Globals.P_COL_COUNT) {
+							// If the correct amount of values is not found alert user and continue to the next entry
 							System.out.println("Invalid entry on line " + count);
 							continue;
 						}
 						
-						// Store local values for various columns in this POS entry, as they will be used multiple times.
-						int age = parseInt(dataEntry[Globals.P_AGE_ID]);
-						int gender = parseInt(dataEntry[Globals.P_GENDER_ID]);
-						LocalDateTime posDate = LocalDateTime.parse(dataEntry[Globals.P_DATE], dateFormatter);
-						String dayOfWeek = dataEntry[Globals.P_DOW];
-						int itemId = parseInt(dataEntry[Globals.P_ITEM_ID]);
-						String itemType = dataEntry[Globals.P_ITEM_TYPE];
-						String itemTemp = dataEntry[Globals.P_ITEM_TEMP];
-						String itemHealth = dataEntry[Globals.P_ITEM_HEALTH];
-						int advItemId = parseInt(dataEntry[Globals.P_SALE_ITEM]);
-						String advItemType = dataEntry[Globals.P_SALE_TYPE];
-						String advItemTemp = dataEntry[Globals.P_SALE_TEMP];
-						String advItemHealth = dataEntry[Globals.P_SALE_HEALTH];
-						boolean boughtAdvertised = parseBoolean(dataEntry[Globals.P_PURCHASE_SALE]);
-						double temperature = toFahrenheit(parseDouble(dataEntry[Globals.P_TEMP]));
-						String precipitation = dataEntry[Globals.P_PERCIPITATION];
-						
-						// This date is different to the previously used one, therefore we have a new customer.
-						if (!posDate.equals(currentDate)) {
-							// Add a new customer built from values defined above.
-							currentDate = posDate;
-							customers.add(new Customer(posDate, dayOfWeek, gender, age, boughtAdvertised, temperature, precipitation));
-						}
-						
-						// This date is equal to the previously used one, therefore this is a POS entry for the same customer.
-						if (posDate.equals(currentDate)) {
-							// Add a new Item, built from the values defined above, to the most previously added customer
-							customers.get(customers.size()-1).addItem(new Item(
-									itemId,	itemType, itemTemp, itemHealth));
-							
-							// Add a new Item for the advertised item to the most previously added customer (this add method ignores duplicates).
-							customers.get(customers.size()-1).addAdvertisedItem(new Item(advItemId, advItemType, advItemTemp, advItemHealth));
-							
-							// The setter for if the customer bought the advertised item is only set if it is true, therefore it cannot
-							// 	be overwrote by a false value. 
-							if (boughtAdvertised) {
-								customers.get(customers.size()-1).setBoughtAdvertised(boughtAdvertised);
-							}
-						}
-						
 						// Builds a PointOfSaleData object based on the raw values defined above.
 						posData.add(new PointOfSaleData(
-								age,
-								gender,
+								parseInt(dataEntry[Globals.P_AGE_ID]),
+								parseInt(dataEntry[Globals.P_GENDER_ID]),
 								parseDouble(dataEntry[Globals.P_DWELL]),
 								parseDouble(dataEntry[Globals.P_ATTENTION]),
 								toFahrenheit(parseDouble(dataEntry[Globals.P_TEMP])),
@@ -244,15 +205,78 @@ public class CafeDataParser {
 								dataEntry[Globals.P_SALE_TEMP],
 								dataEntry[Globals.P_SALE_HEALTH],
 								parseInt(dataEntry[Globals.P_TOTAL_CUST]),
-								posDate,
-								dayOfWeek,
-								itemId,
-								itemType,
-								itemTemp,
-								itemHealth,
+								LocalDateTime.parse(dataEntry[Globals.P_DATE], dateFormatter),
+								dataEntry[Globals.P_DOW],
+								parseInt(dataEntry[Globals.P_ITEM_ID]),
+								dataEntry[Globals.P_ITEM_TYPE],
+								dataEntry[Globals.P_ITEM_TEMP],
+								dataEntry[Globals.P_ITEM_HEALTH],
 								parseBoolean(dataEntry[Globals.P_PURCHASE_SALE])));
 					}
 				}
+				
+				// Sort the POS Data (by date)
+				Collections.sort(posData, new Comparator<PointOfSaleData>() {
+					public int compare(PointOfSaleData pos1, PointOfSaleData pos2) {
+						return pos1.getDate().compareTo(pos2.getDate());
+					}
+				});
+				
+				// Build the list of customers from the POS data.
+				customers = new ArrayList<Customer>();
+				Customer prevCustomer = null;
+				int startIndex = 0;
+				
+				for (int i = 0; i <= posData.size(); i++) {
+					// This date is different to the previously used one, therefore we have a new customer.
+					if (prevCustomer == null || i == posData.size() || !prevCustomer.getDate().equals(posData.get(i).getDate())) {
+						if (i > startIndex) {
+							int endIndex = i-1;
+							
+							// Used to build a list of all unique customers of the current datetime.
+							List<Customer> currentCustomers = new ArrayList<Customer>();
+							
+							// Loops through the section of POS data with the current datetime to find unique customers
+							for (int j = startIndex; j <= endIndex; j++) {
+								// Create a customer out of the current POS data row
+								Customer c = new Customer(posData.get(j).getDate(), posData.get(j).getDayOfWeek(), posData.get(j).getGender(), posData.get(j).getAge(), posData.get(j).getBoughtAdvertised(), posData.get(j).getTemperature(), posData.get(j).getPrecipitation());
+								// Checks if an identical customer exists already exists in the list (equal date, gender, and age).
+								if (!currentCustomers.contains(c)) {
+									// Adds the current customer if it does not exist.
+									currentCustomers.add(c);
+								}
+							}
+							
+							// Loops through the previously created unique customers to add their items
+							for (Customer currCustomer : currentCustomers) {
+								// Loop through the POS data for each unique customer in order to get the item information
+								for (int j = startIndex; j <= endIndex; j++) {
+									Customer c = new Customer(posData.get(j).getDate(), posData.get(j).getDayOfWeek(), posData.get(j).getGender(), posData.get(j).getAge(), posData.get(j).getBoughtAdvertised(), posData.get(j).getTemperature(), posData.get(j).getPrecipitation());
+									// Checks that the current POS data customer information is equal to the current unique customer (equal date, gender, and age)
+									if (currCustomer.equals(c)) {
+										// Adds the purchased item and advertised item from this POS data row to the customer.
+										currCustomer.addItem(new Item(posData.get(j).getItemId(), posData.get(j).getItemType(), posData.get(j).getItemTemp(), posData.get(j).getItemHealth()));
+										currCustomer.addAdvertisedItem(new Item(posData.get(j).getAdvertisedItemId(), posData.get(j).getAdvertisedItemType(), posData.get(j).getAdvertisedItemTemp(), posData.get(j).getAdvertisedItemHealth()));
+										// Used to set that the customer bought the advertised item. Only sets if true (as this is defaulted to false)
+										if (posData.get(j).getBoughtAdvertised()) {
+											currCustomer.setBoughtAdvertised(posData.get(j).getBoughtAdvertised());
+										}
+									}
+								}
+								// Add the current unique customer to the overall customers list after its items have been added
+								customers.add(currCustomer);
+							}
+						}
+						
+						// Only set the start index and previous customer when i is a valid index within posData (as the for loop loops from 0 to posData.size)
+						// This is needed to use the above if statement to catch the last datetime in the POS data list.
+						if (i < posData.size()) {
+							startIndex = i;						
+							prevCustomer = new Customer(posData.get(i).getDate(), posData.get(i).getDayOfWeek(), posData.get(i).getGender(), posData.get(i).getAge(), posData.get(i).getBoughtAdvertised(), posData.get(i).getTemperature(), posData.get(i).getPrecipitation());
+						}
+					}
+				}
+				
 			} catch (FileNotFoundException e) {
 				System.out.println("File " + Globals.POS_FILE + " does not exist.");
 				posData = null;
@@ -610,7 +634,7 @@ public class CafeDataParser {
 			e.printStackTrace();
 		}
 		
-		file.println("Date,DayOfMonth,Minute,DayOfWeek,HealthyCount,UnhealthyCount,Percentage,Gender,Age,AdvHealth,BoughtAdv,AdvTemp,AdvType,Temperature,Precipitation");
+		file.println("Datetime,Date,DayOfMonth,Hour,Minute,DayOfWeek,HealthyCount,UnhealthyCount,Percentage,Gender,Age,AdvHealth,BoughtAdv,AdvTemp,AdvType,Temperature,Precipitation");
 		
 		for (Customer customer : customers) {
 			int healthyCount = 0;
@@ -653,9 +677,11 @@ public class CafeDataParser {
 				}
 			}
 			
-			file.println(LocalDate.of(customer.getDate().getYear(), customer.getDate().getMonthValue(), customer.getDate().getDayOfMonth()) + ","
+			file.println(customer.getDate() + ","
+					+ LocalDate.of(customer.getDate().getYear(), customer.getDate().getMonthValue(), customer.getDate().getDayOfMonth()) + ","
 					+ customer.getDate().getDayOfMonth() + ","
-					+ (customer.getDate().getHour() * 60) + customer.getDate().getMinute() + ","
+					+ customer.getDate().getHour() + ","
+					+ (customer.getDate().getHour() * 60 + customer.getDate().getMinute()) + ","
 					+ customer.getDayOfWeek() + ","
 					+ healthyCount + ","
 					+ (customer.getPurchasedItems().size() - healthyCount) + ","
