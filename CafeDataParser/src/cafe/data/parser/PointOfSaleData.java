@@ -63,6 +63,10 @@ public class PointOfSaleData {
 		return dayOfWeek;
 	}
 	
+	public int getItemId() {
+		return itemId;
+	}
+	
 	public String getItemType() {
 		return itemType;
 	}
@@ -101,5 +105,25 @@ public class PointOfSaleData {
 	
 	public double getAttentionTime() {
 		return attentionTime;
+	}
+	
+	public boolean getBoughtAdvertised() {
+		return purchasedSaleItem;
+	}
+	
+	public int getAdvertisedItemId() {
+		return saleItemId;
+	}
+	
+	public String getAdvertisedItemType() {
+		return saleItemType;
+	}
+	
+	public String getAdvertisedItemTemp() {
+		return saleItemTemp;
+	}
+
+	public String getAdvertisedItemHealth() {
+		return saleItemHealth;
 	}
 }
