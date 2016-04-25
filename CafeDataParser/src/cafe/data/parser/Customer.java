@@ -34,6 +34,18 @@ public class Customer {
 		this.precipitation = precipitation;
 	}
 	
+	public Customer(LocalDateTime datetime, String dayOfWeek, Gender gender, Age age, boolean boughtAdvertised, double temperature, String precipitation) {
+		this.datetime = datetime;
+		this.dayOfWeek = dayOfWeek;
+		this.gender = gender;
+		this.age = age;
+		this.purchasedItems = new ArrayList<Item>();
+		this.advertisedItems = new ArrayList<Item>();
+		this.boughtAdvertised = boughtAdvertised;
+		this.temperature = temperature;
+		this.precipitation = precipitation;
+	}
+	
 	/**
 	 * Adds an item to the list of items the customer purchased.
 	 * @param item
@@ -100,5 +112,28 @@ public class Customer {
 	
 	public String getPrecipitation() {
 		return precipitation;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((datetime == null) ? 0 : datetime.hashCode());
+		result = prime * result + ((gender == null) ? 0 : gender.hashCode());
+		result = prime * result + ((age == null) ? 0 : age.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		}
+		if (!Customer.class.isAssignableFrom(obj.getClass())) {
+			return false;
+		}
+		final Customer c = (Customer)obj;
+		
+		return this.datetime.equals(c.getDate()) && this.gender.equals(c.getGender()) && this.age.equals(c.getAge()); 
 	}
 }
